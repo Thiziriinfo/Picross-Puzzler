@@ -1,97 +1,94 @@
 library(shiny)
+library(DT)
 
-# Définition des données de puzzle
-puzzles <- list(
-  list(
-    size = 5,
-    rows = c(2, 1, 1, 2, 1),
-    cols = c(1, 2, 1, 1)
-  ),
-  list(
-    size = 10,
-    rows = c(3, 1, 2, 1, 1, 2, 1, 1, 2, 3),
-    cols = c(2, 1, 1, 3, 1, 1, 1, 1, 1, 2)
-  ),
-  list(
-    size = 15,
-    rows = c(5, 1, 2, 1, 3, 1, 1, 2, 1, 1, 1, 2, 1, 3, 5),
-    cols = c(3, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3)
-  )
-)
+# Fonction pour générer une grille de Picross aléatoire
+generate_picross_grid <- function(size) {
+  picross_grid <- matrix(sample(c(0, 1), size^2, replace = TRUE), nrow = size, ncol = size)
+  row_indices <- sapply(1:size, function(i) paste(sum(picross_grid[i,] == 1), collapse = " "))
+  col_indices <- sapply(1:size, function(j) paste(sum(picross_grid[,j] == 1), collapse = " "))
+  list(grid = picross_grid, row_indices = row_indices, col_indices = col_indices)
+}
 
-# Définition de l'interface utilisateur
 ui <- fluidPage(
-  titlePanel("Jeu Picross"),
+  titlePanel("Picross"),
   sidebarLayout(
     sidebarPanel(
-      selectInput("puzzle_size", "Taille de la Grille:", choices = c(5, 10, 15)),
-      selectInput("puzzle_level", "Niveau de Difficulté:", choices = 1:length(puzzles)),
-      actionButton("new_game", "Nouvelle Partie"),
-      actionButton("check", "Vérifier")
+      numericInput("grid_size", "Taille de la Grille", value = 5, min = 3, max = 10),
+      actionButton("new_puzzle", "Nouveau Puzzle"),
+      actionButton("check_puzzle", "Vérifier"),
+      p("Utilisez les boutons ci-dessous pour remplir ou effacer les cases de la grille.")
     ),
     mainPanel(
-      tableOutput("picross_grid"),
-      tableOutput("row_hints"),
-      tableOutput("col_hints"),
-      textOutput("result")
+      fluidRow(
+        column(6, DTOutput("row_indices")),
+        column(6, DTOutput("col_indices"))
+      ),
+      br(),
+      fluidRow(
+        column(12, DTOutput("grid"))
+      )
     )
   )
 )
 
-# Définition du serveur
 server <- function(input, output, session) {
+  # Initialiser la grille de Picross
+  picross_data <- reactiveVal(NULL)
   
-  # Sélectionner le puzzle en fonction du niveau choisi
-  current_puzzle <- reactive({
-    puzzles[[input$puzzle_level]]
+  # Observer pour générer un nouveau puzzle
+  observeEvent(input$new_puzzle, {
+    picross_data(generate_picross_grid(input$grid_size))
   })
   
-  # Afficher la grille de jeu
-  output$picross_grid <- renderTable({
-    req(current_puzzle())
-    size <- as.numeric(input$puzzle_size)
-    grid <- matrix(0, nrow = size, ncol = size)
-    grid
-  }, rownames = FALSE, colnames = FALSE)
-  
-  # Afficher les indices de lignes
-  output$row_hints <- renderTable({
-    req(current_puzzle())
-    current_puzzle()$rows[1:as.numeric(input$puzzle_size)]
-  }, rownames = FALSE, colnames = FALSE)
-  
-  # Afficher les indices de colonnes
-  output$col_hints <- renderTable({
-    req(current_puzzle())
-    t(current_puzzle()$cols[1:as.numeric(input$puzzle_size)])
-  }, rownames = FALSE, colnames = FALSE)
-  
-  # Permettre aux utilisateurs de remplir/effacer les cases
-  observeEvent(input$picross_grid, {
-    values <- input$picross_grid
-    grid <- isolate(values)
-    grid[!is.na(values)] <- ifelse(grid[!is.na(values)] == 0, 1, 0)
-    updateTableInput(session, "picross_grid", value = grid)
-  })
-  
-  # Vérifier la solution
-  output$result <- renderText({
-    req(current_puzzle())
-    size <- as.numeric(input$puzzle_size)
-    grid <- isolate(input$picross_grid)
-    if (all(grid == as.matrix(size))) {
-      "Bravo ! Vous avez résolu le puzzle."
-    } else {
-      "Continuez à remplir la grille."
+  # Observer pour afficher la grille de Picross
+  output$grid <- renderDT({
+    if (!is.null(picross_data())) {
+      grid <- picross_data()$grid
+      datatable(grid, options = list(dom = 't', paging = FALSE, ordering = FALSE, searching = FALSE, 
+                                     rownames = FALSE, columnDefs = list(list(className = 'dt-center', targets = "_all"))))
     }
   })
   
-  # Nouvelle partie
-  observeEvent(input$new_game, {
-    size <- as.numeric(input$puzzle_size)
-    grid <- matrix(0, nrow = size, ncol = size)
-    updateTableInput(session, "picross_grid", value = grid)
+  # Observer pour afficher les indices des lignes
+  output$row_indices <- renderDT({
+    if (!is.null(picross_data())) {
+      data.frame(Lignes = picross_data()$row_indices)
+    }
+  })
+  
+  # Observer pour afficher les indices des colonnes
+  output$col_indices <- renderDT({
+    if (!is.null(picross_data())) {
+      data.frame(Colonnes = picross_data()$col_indices)
+    }
+  })
+  
+  # Fonction pour vérifier si la grille actuelle correspond à la solution
+  check_solution <- function() {
+    if (!is.null(picross_data())) {
+      input_grid <- as.matrix(sapply(1:input$grid_size^2, function(i) input[[paste0("cell_", i)]]))
+      solution <- picross_data()$grid
+      identical(input_grid, solution)
+    } else {
+      FALSE
+    }
+  }
+  
+  # Observer pour vérifier la solution
+  observeEvent(input$check_puzzle, {
+    if (check_solution()) {
+      showModal(modalDialog(
+        title = "Bravo!",
+        "Vous avez résolu le puzzle avec succès."
+      ))
+    } else {
+      showModal(modalDialog(
+        title = "Désolé!",
+        "La grille n'est pas correcte. Veuillez réessayer."
+      ))
+    }
   })
 }
 
 shinyApp(ui, server)
+
