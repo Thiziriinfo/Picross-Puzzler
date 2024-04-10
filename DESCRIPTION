@@ -1,0 +1,13 @@
+Package: PicrossPackage
+Type: Package
+Title: R Package for Picross Puzzle Game
+Version: 0.1.0
+Author: Thiziri ABCHICHE
+Maintainer: Thiziri ABCHICHE <thiziri.abchiche@etu.umontpellier.fr>
+Description: This R package provides functionalities for generating random Picross puzzles, verifying solutions, 
+and serving as a foundation for a Shiny application for playing Picross puzzles.
+License: MIT License
+Encoding: UTF-8
+LazyData: true
+Imports: Rcpp (>= 1.0.11)
+LinkingTo: Rcpp

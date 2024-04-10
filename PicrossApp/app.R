@@ -1,182 +1,220 @@
-
 library(shiny)
-library(shinyjs)
 
-# Fonction pour générer une grille aléatoire en fonction de la taille et de la probabilité
-generer_grille_aleatoire <- function(taille, p) {
-  matrix(rbinom(taille^2, 1, p), nrow = taille)
+# Fonction pour générer une grille de Picross aléatoire
+generer_grille_picross <- function(taille) {
+  matrix(sample(c(0, 1), taille^2, replace = TRUE, prob = c(0.7, 0.3)), nrow = taille)
 }
 
-# Fonction pour obtenir les indices des lignes contiguës
-obtenir_indices_ligne <- function(ligne) {
-  consecutive_ones <- rle(ligne)$lengths[rle(ligne)$values == 1]
-  if (length(consecutive_ones) == 0) {
-    return(NULL)
+# Fonction pour générer des indices aléatoires sous forme de matrices
+generer_indices <- function(taille) {
+  indices <- matrix(0, nrow = taille, ncol = taille)
+  
+  # Générer des indices pour chaque ligne
+  for (i in 1:taille) {
+    somme <- 0
+    for (j in 1:taille) {
+      if (somme < taille) {
+        indices[i, j] <- sample(0:(taille - somme - 1), 1)
+        somme <- somme + indices[i, j] + 1
+      }
+    }
+  }
+  
+  # Générer des indices pour chaque colonne
+  for (j in 1:taille) {
+    somme <- 0
+    for (i in 1:taille) {
+      if (somme < taille) {
+        indices[j, i] <- sample(0:(taille - somme - 1), 1)
+        somme <- somme + indices[j, i] + 1
+      }
+    }
+  }
+  
+  return(indices)
+}
+
+# Fonction pour vérifier si la grille correspond aux indices
+verifier_solution <- function(grille, indices_lignes, indices_colonnes) {
+  taille <- nrow(grille)
+  indices_lignes_calcul <- sapply(1:taille, function(i) {
+    longueurs_series <- rle(grille[i, ])$lengths[rle(grille[i, ])$values == 1]
+    if (length(longueurs_series) == 0) {
+      return(0)
+    } else {
+      return(length(longueurs_series))
+    }
+  })
+  indices_colonnes_calcul <- sapply(1:taille, function(j) {
+    longueurs_series <- rle(grille[, j])$lengths[rle(grille[, j])$values == 1]
+    if (length(longueurs_series) == 0) {
+      return(0)
+    } else {
+      return(length(longueurs_series))
+    }
+  })
+  if (all(indices_lignes_calcul == indices_lignes) && all(indices_colonnes_calcul == indices_colonnes)) {
+    return(TRUE)
   } else {
-    return(consecutive_ones)
+    return(FALSE)
   }
 }
 
-# Fonction pour obtenir les indices des colonnes contiguës
-obtenir_indices_colonne <- function(colonne) {
-  consecutive_ones <- rle(colonne)$lengths[rle(colonne)$values == 1]
-  if (length(consecutive_ones) == 0) {
-    return(NULL)
-  } else {
-    return(consecutive_ones)
-  }
-}
-
-# Définition de l'interface utilisateur (UI)
+# Interface utilisateur
 ui <- fluidPage(
-  tags$style("
-      body {
-        background-image: url('https://example.com/background-image.jpg'); /* Remplacez l'URL par votre propre image */
-        background-size: cover;
-      }
-      .square-button {
-        width: 30px;
-        height: 30px;
-        margin: 0px;
-        font-size: 12px; /* Taille de police ajustée pour une meilleure visibilité */
-        background-color: blue; /* Couleur de fond des cellules de la grille */
-      }
-      .black-cell {
-        background-color: black !important; /* Couleur de fond pour les cellules noires */
-      }
-      .cross-cell {
-        color: red; /* Couleur du symbole de la cellule de croix */
-        font-size: 18px;
-        line-height: 30px;
-      }
-  "),
-  titlePanel("Jeu Picross"),
-  
-  selectInput("gridSize", "Taille de la Grille",
-              choices = c(5, 6, 7, 8, 9, 10),  # Options de taille de grille
-              selected = 5),  # Taille de grille par défaut
-  
-  selectInput("difficultyLevel", "Niveau de difficulté",
-              choices = c("Facile", "Moyen", "Difficile"),
-              selected = "Facile"),
-  
-  actionButton("generateButton", "Générer une nouvelle grille"),
-  actionButton("checkSolutionButton", "Vérifier la solution"),
-  
-  fluidRow(
-    column(3, align = "center",
-           uiOutput("rowIndicesTable")
+  titlePanel("Bienvenue au jeu du Picross"),
+  sidebarLayout(
+    sidebarPanel(
+      numericInput("taille_grille", "Taille de la Grille", value = 5, min = 5, max = 15),
+      actionButton("generer_grille", "Générer une Nouvelle Grille", style = "color: #ffffff; background-color: #007bff; border-color: #007bff;"),
+      actionButton("verifier_solution", "Vérifier la Solution", style = "color: #ffffff; background-color: #28a745; border-color: #28a745;")
     ),
-    column(6, align = "center",
-           uiOutput("picrossGrid")
-    ),
-    column(3, align = "center",
-           uiOutput("columnIndicesTable")
+    mainPanel(
+      h3("Indices des Lignes"),
+      uiOutput("indices_lignes"),
+      h3("Indices des Colonnes"),
+      uiOutput("indices_colonnes"),
+      h3("Grille de Picross"),
+      uiOutput("grille_picross")
+    )
+  ),
+  tags$head(
+    tags$style(
+      HTML("
+        .checkbox-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+          gap: 1px;
+        }
+        .indices-matrix {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(20px, 1fr));
+          gap: 1px;
+          margin-bottom: 10px;
+        }
+        .indice-cell {
+          background-color: lightgray;
+          text-align: center;
+          font-weight: bold;
+          padding: 3px;
+        }
+      ")
     )
   )
 )
 
-# Fonction pour comparer deux matrices
-compare_matrices <- function(mat1, mat2) {
-  if (!identical(dim(mat1), dim(mat2))) {
-    stop("Les dimensions des matrices ne correspondent pas.")
-  }
+# Logique du serveur
+server <- function(input, output, session) {
+  # Réactivez l'objet pour stocker la grille de Picross générée
+  grille_picross <- reactiveVal(NULL)
+  indices_lignes <- reactiveVal(NULL)
+  indices_colonnes <- reactiveVal(NULL)
+  grille_remplie <- reactiveVal(NULL)
   
-  comparison <- mat1 == mat2
+  # Observer pour générer une nouvelle grille de Picross
+  observeEvent(input$generer_grille, {
+    taille <- input$taille_grille
+    grille <- generer_grille_picross(taille)
+    indices_lignes_val <- generer_indices(taille)
+    indices_colonnes_val <- generer_indices(taille)
+    grille_picross(grille)
+    indices_lignes(indices_lignes_val)
+    indices_colonnes(indices_colonnes_val)
+    grille_remplie(matrix(FALSE, nrow = taille, ncol = taille))
+  })
   
-  return(comparison)
+  # Observer pour vérifier la solution
+  observeEvent(input$verifier_solution, {
+    grille <- grille_picross()
+    indices_lignes_val <- indices_lignes()
+    indices_colonnes_val <- indices_colonnes()
+    grille_remplie_val <- grille_remplie()
+    
+    if (!is.null(grille) && !is.null(indices_lignes_val) && !is.null(indices_colonnes_val) && !is.null(grille_remplie_val)) {
+      solution_correcte <- verifier_solution(grille_remplie_val, indices_lignes_val, indices_colonnes_val)
+      
+      if (solution_correcte) {
+        showModal(modalDialog(
+          title = "Bravo !",
+          "Félicitations ! Vous avez résolu le Picross avec succès."
+        ))
+      } else {
+        showModal(modalDialog(
+          title = "Oups",
+          "Désolé, y'a des erreurs. Veuillez réessayer."
+        ))
+      }
+    }
+  })
+  
+  # Observer pour remplir ou effacer les cases de la grille
+  observeEvent(input$grille, {
+    grille <- grille_remplie()
+    info <- strsplit(input$grille, "_")[[1]]
+    i <- as.numeric(info[2])
+    j <- as.numeric(info[3])
+    grille[i, j] <- !grille[i, j]
+    grille_remplie(grille)
+  })
+  
+  # Afficher la grille de Picross
+  output$grille_picross <- renderUI({
+    grille <- grille_picross()
+    if (!is.null(grille)) {
+      grid_ui <- tagList(
+        lapply(1:nrow(grille), function(i) {
+          div(
+            class = "checkbox-grid",
+            lapply(1:ncol(grille), function(j) {
+              checkboxInput(paste0("cell_", i, "_", j), "", value = grille_remplie()[i, j])
+            })
+          )
+        })
+      )
+      grid_ui
+    }
+  })
+  
+  # Afficher les indices des lignes
+  output$indices_lignes <- renderUI({
+    indices_lignes_val <- indices_lignes()
+    if (!is.null(indices_lignes_val)) {
+      div(class = "indices-matrix",
+          lapply(1:nrow(indices_lignes_val), function(i) {
+            div(class = "indice-cell", 
+                lapply(indices_lignes_val[i,], function(indice) {
+                  if (indice == 0) {
+                    ""
+                  } else {
+                    indice
+                  }
+                }))
+          }))
+    }
+  })
+  
+  # Afficher les indices des colonnes
+  output$indices_colonnes <- renderUI({
+    indices_colonnes_val <- indices_colonnes()
+    if (!is.null(indices_colonnes_val)) {
+      div(class = "indices-matrix",
+          lapply(1:nrow(indices_colonnes_val), function(i) {
+            div(class = "indice-cell", 
+                lapply(indices_colonnes_val[i,], function(indice) {
+                  if (indice == 0) {
+                    ""
+                  } else {
+                    indice
+                  }
+                }))
+          }))
+    }
+  })
 }
 
-# Définition de la logique du serveur
-server <- function(input, output) {
-  
-  picrossGridData <- reactiveVal(NULL)
-  userGrid <- reactiveVal(matrix(0, nrow = 5, ncol = 5))  # Initialisation de userGrid
-  
-  observeEvent(input$generateButton, {
-    taille_grille <- as.numeric(input$gridSize)
-    niveau_difficulte <- input$difficultyLevel
-    
-    # Déterminez la probabilité en fonction du niveau de difficulté
-    p <- switch(niveau_difficulte,
-                "Facile" = 0.3,
-                "Moyen" = 0.5,
-                "Difficile" = 0.7)
-    
-    randomGrid <- generer_grille_aleatoire(taille_grille, p)
-    indices_lignes <- apply(randomGrid, 1, obtenir_indices_ligne)
-    indices_colonnes <- apply(randomGrid, 2, obtenir_indices_colonne)
-    picrossGridData(list(
-      picrossMatrix = randomGrid,
-      indicesLignes = indices_lignes,
-      indicesColonnes = indices_colonnes
-    ))
-    
-    # Mettre à jour la taille de userGrid pour qu'elle corresponde à randomGrid
-    userGrid(matrix(0, nrow = taille_grille, ncol = taille_grille))
-  })
-  
-  observeEvent(input$checkSolutionButton, {
-    picrossGridDataValue <- picrossGridData()
-    if (is.null(picrossGridDataValue)) {
-      showModal(modalDialog(
-        title = "Erreur",
-        "Veuillez générer une grille aléatoire avant de vérifier la solution."
-      ))
-      return()
-    }
-    
-    randomGrid <- picrossGridDataValue$picrossMatrix
-    comparison_result <- compare_matrices(userGrid(), randomGrid)
-    if (all(comparison_result)) {
-      showModal(modalDialog(
-        title = "Bravo !",
-        "Votre solution est correcte !"
-      ))
-    } else {
-      showModal(modalDialog(
-        title = "Réessayer",
-        "Désolé, votre solution n'est pas correcte. Veuillez réessayer."
-      ))
-    }
-  })
-  
-  output$rowIndicesTable <- renderTable({
-    picrossGridDataValue <- picrossGridData()
-    if (is.null(picrossGridDataValue)) return(NULL)
-    t(sapply(picrossGridDataValue$indicesLignes, function(indices) {
-      paste(indices, collapse = " ")
-    }))
-  })
-  
-  output$columnIndicesTable <- renderTable({
-    picrossGridDataValue <- picrossGridData()
-    if (is.null(picrossGridDataValue)) return(NULL)
-    t(sapply(picrossGridDataValue$indicesColonnes, function(indices) {
-      paste(indices, collapse = " ")
-    }))
-  })
-  
-  output$picrossGrid <- renderUI({
-    picrossGridDataValue <- picrossGridData()
-    if (is.null(picrossGridDataValue)) return(NULL)
-    
-    picrossGrid <- tagList(
-      lapply(1:input$gridSize, function(i) {
-        div(
-          class = "cell-container",
-          lapply(1:input$gridSize, function(j) {
-            actionButton(
-              inputId = paste0("cell", i, j),
-              label = "",
-              class = c("square-button", "cell-button"),
-              value = picrossGridDataValue$picrossMatrix[i, j],
-              onclick = paste("Shiny.setInputValue('selected_cell', {row: ", i, ", col: ", j, "});")
-            )
-          })
-        )
-      })
-    )
+# Lancer l'application Shiny
+shinyApp(ui, server)
+
     
     
     
