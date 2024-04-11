@@ -1,11 +1,26 @@
+
+library(roxygen2)
+
+#' Application Shiny pour le jeu de Picross
+#'
+#' Cette application Shiny permet de jouer au jeu de Picross.
+#'
+#' @title Application Shiny pour le jeu de Picross
+#' @author ABCHICHE Thiziri
+#' @seealso Pour plus d'informations sur le jeu de Picross, voir https://fr.wikipedia.org/wiki/Picross
+#' @import shiny
+#' @export
 library(shiny)
+library(shinyjs)
 
 # Fonction pour générer une grille de Picross aléatoire
+#' @export
 generer_grille_picross <- function(taille) {
   matrix(sample(c(0, 1), taille^2, replace = TRUE, prob = c(0.7, 0.3)), nrow = taille)
 }
 
 # Fonction pour générer des indices aléatoires sous forme de matrices
+#' @export
 generer_indices <- function(taille) {
   indices <- matrix(0, nrow = taille, ncol = taille)
 
@@ -35,6 +50,7 @@ generer_indices <- function(taille) {
 }
 
 # Fonction pour vérifier si la grille correspond aux indices
+#' @export
 verifier_solution <- function(grille, indices_lignes, indices_colonnes) {
   taille <- nrow(grille)
   indices_lignes_calcul <- sapply(1:taille, function(i) {
@@ -61,6 +77,7 @@ verifier_solution <- function(grille, indices_lignes, indices_colonnes) {
 }
 
 # Interface utilisateur
+#' @export
 ui <- fluidPage(
   titlePanel("🙂 Bienvenue au jeu du Picross 🙂"), # Titre avec emoji Smiley
   tags$div(
@@ -73,7 +90,7 @@ ui <- fluidPage(
       tags$li("Cliquez sur 'Générer une Nouvelle Grille' pour commencer une nouvelle partie."),
       tags$li("Cliquez sur 'Vérifier la Solution' pour voir si vous avez résolu le Picross avec succès.")
     )
-  ),
+    ),
   sidebarLayout(
     sidebarPanel(
       numericInput("taille_grille", "Taille de la Grille", value = 5, min = 5, max = 15),
@@ -115,6 +132,7 @@ ui <- fluidPage(
 )
 
 # Logique du serveur
+#' @export
 server <- function(input, output, session) {
   # Réactivez l'objet pour stocker la grille de Picross générée
   grille_picross <- reactiveVal(NULL)
@@ -146,12 +164,12 @@ server <- function(input, output, session) {
 
       if (solution_correcte) {
         showModal(modalDialog(
-          title = "🎉 Bravo !", # Message "Bravo" avec emoji
+          title = "Bravo! 🎉",
           "Félicitations ! Vous avez résolu le Picross avec succès."
         ))
       } else {
         showModal(modalDialog(
-          title = "😔 Oups", # Message "Oups" avec emoji
+          title = "Oups 😕",
           "Désolé, y'a des erreurs. Veuillez réessayer."
         ))
       }
@@ -224,9 +242,6 @@ server <- function(input, output, session) {
 }
 
 # Lancer l'application Shiny
+#' @export
 shinyApp(ui, server)
-
-
-
-
 
