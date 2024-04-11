@@ -8,11 +8,7 @@ generer_grille_picross <- function(taille) {
 # Fonction pour générer des indices aléatoires sous forme de matrices
 generer_indices <- function(taille) {
   indices <- matrix(0, nrow = taille, ncol = taille)
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> 0732836708ff581de5bd99ecd28c400ec7f260bd
   # Générer des indices pour chaque ligne
   for (i in 1:taille) {
     somme <- 0
@@ -23,11 +19,7 @@ generer_indices <- function(taille) {
       }
     }
   }
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> 0732836708ff581de5bd99ecd28c400ec7f260bd
   # Générer des indices pour chaque colonne
   for (j in 1:taille) {
     somme <- 0
@@ -38,11 +30,7 @@ generer_indices <- function(taille) {
       }
     }
   }
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> 0732836708ff581de5bd99ecd28c400ec7f260bd
   return(indices)
 }
 
@@ -74,7 +62,6 @@ verifier_solution <- function(grille, indices_lignes, indices_colonnes) {
 
 # Interface utilisateur
 ui <- fluidPage(
-<<<<<<< HEAD
   titlePanel("🙂 Bienvenue au jeu du Picross 🙂"), # Titre avec emoji Smiley
   tags$div(
     h4("Règles du jeu :"), # Règles du jeu
@@ -87,9 +74,6 @@ ui <- fluidPage(
       tags$li("Cliquez sur 'Vérifier la Solution' pour voir si vous avez résolu le Picross avec succès.")
     )
   ),
-=======
-  titlePanel("Bienvenue au jeu du Picross"),
->>>>>>> 0732836708ff581de5bd99ecd28c400ec7f260bd
   sidebarLayout(
     sidebarPanel(
       numericInput("taille_grille", "Taille de la Grille", value = 5, min = 5, max = 15),
@@ -137,11 +121,7 @@ server <- function(input, output, session) {
   indices_lignes <- reactiveVal(NULL)
   indices_colonnes <- reactiveVal(NULL)
   grille_remplie <- reactiveVal(NULL)
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> 0732836708ff581de5bd99ecd28c400ec7f260bd
   # Observer pour générer une nouvelle grille de Picross
   observeEvent(input$generer_grille, {
     taille <- input$taille_grille
@@ -160,17 +140,10 @@ server <- function(input, output, session) {
     indices_lignes_val <- indices_lignes()
     indices_colonnes_val <- indices_colonnes()
     grille_remplie_val <- grille_remplie()
-<<<<<<< HEAD
 
     if (!is.null(grille) && !is.null(indices_lignes_val) && !is.null(indices_colonnes_val) && !is.null(grille_remplie_val)) {
       solution_correcte <- verifier_solution(grille_remplie_val, indices_lignes_val, indices_colonnes_val)
 
-=======
-    
-    if (!is.null(grille) && !is.null(indices_lignes_val) && !is.null(indices_colonnes_val) && !is.null(grille_remplie_val)) {
-      solution_correcte <- verifier_solution(grille_remplie_val, indices_lignes_val, indices_colonnes_val)
-      
->>>>>>> 0732836708ff581de5bd99ecd28c400ec7f260bd
       if (solution_correcte) {
         showModal(modalDialog(
           title = "🎉 Bravo !", # Message "Bravo" avec emoji
@@ -178,21 +151,13 @@ server <- function(input, output, session) {
         ))
       } else {
         showModal(modalDialog(
-<<<<<<< HEAD
           title = "😔 Oups", # Message "Oups" avec emoji
-=======
-          title = "Oups",
->>>>>>> 0732836708ff581de5bd99ecd28c400ec7f260bd
           "Désolé, y'a des erreurs. Veuillez réessayer."
         ))
       }
     }
   })
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> 0732836708ff581de5bd99ecd28c400ec7f260bd
   # Observer pour remplir ou effacer les cases de la grille
   observeEvent(input$grille, {
     grille <- grille_remplie()
@@ -202,11 +167,7 @@ server <- function(input, output, session) {
     grille[i, j] <- !grille[i, j]
     grille_remplie(grille)
   })
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> 0732836708ff581de5bd99ecd28c400ec7f260bd
   # Afficher la grille de Picross
   output$grille_picross <- renderUI({
     grille <- grille_picross()
@@ -231,11 +192,7 @@ server <- function(input, output, session) {
     if (!is.null(indices_lignes_val)) {
       div(class = "indices-matrix",
           lapply(1:nrow(indices_lignes_val), function(i) {
-<<<<<<< HEAD
             div(class = "indice-cell",
-=======
-            div(class = "indice-cell", 
->>>>>>> 0732836708ff581de5bd99ecd28c400ec7f260bd
                 lapply(indices_lignes_val[i,], function(indice) {
                   if (indice == 0) {
                     ""
@@ -253,11 +210,7 @@ server <- function(input, output, session) {
     if (!is.null(indices_colonnes_val)) {
       div(class = "indices-matrix",
           lapply(1:nrow(indices_colonnes_val), function(i) {
-<<<<<<< HEAD
             div(class = "indice-cell",
-=======
-            div(class = "indice-cell", 
->>>>>>> 0732836708ff581de5bd99ecd28c400ec7f260bd
                 lapply(indices_colonnes_val[i,], function(indice) {
                   if (indice == 0) {
                     ""
@@ -272,6 +225,7 @@ server <- function(input, output, session) {
 
 # Lancer l'application Shiny
 shinyApp(ui, server)
+
 
 
 
