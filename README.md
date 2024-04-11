@@ -25,7 +25,8 @@ Le Picross, également connu sous le nom de Nonogram, est un jeu de puzzle logiq
 
 ### 3.Installation du package 
 
--install.package("remotes")
+-installer le package "remotes" : install.package("remotes")
+
 -remotes::install_github("https://github.com/Thiziriinfo/Picross-Puzzler")
 
 
