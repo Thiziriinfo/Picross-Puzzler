@@ -6,12 +6,10 @@ Author: ABCHICHE Thiziri
 Maintainer: ABCHICHE Thiziri <thiziri.abchiche@etu.umontpellier.fr>
 Description: Ce package fournit la base pour un jeu de Picross développé en R,comprenant une application Shiny.
 Ce package permet aux utilisateurs de générer des grilles de Picross, de vérifier les solutions et de jouer au jeu de manière interactive.
-License: MIT
 Author: Thiziri ABCHICHE
 Maintainer: Thiziri ABCHICHE <thiziri.abchiche@etu.umontpellier.fr>
 Description: This R package provides functionalities for generating random Picross puzzles, verifying solutions, 
 and serving as a foundation for a Shiny application for playing Picross puzzles.
 License: MIT License
->>>>>>> 0732836708ff581de5bd99ecd28c400ec7f260bd
 Encoding: UTF-8
 LazyData: true
